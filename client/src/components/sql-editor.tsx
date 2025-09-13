@@ -1,8 +1,8 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Code, Play, Square, RotateCcw } from "lucide-react";
-import { useState } from "react";
+import Editor from "@monaco-editor/react";
+import { format } from "sql-formatter";
 
 interface SQLEditorProps {
   value: string;
@@ -12,28 +12,23 @@ interface SQLEditorProps {
 }
 
 export default function SQLEditor({ value, onChange, onExecute, isExecuting }: SQLEditorProps) {
-  const [executionTime, setExecutionTime] = useState<number | null>(null);
-
   const handleExecute = () => {
-    const startTime = Date.now();
     onExecute();
-    // Note: In a real implementation, this would be handled by the query result
-    setExecutionTime(Date.now() - startTime);
   };
 
   const handleFormat = () => {
-    // Simple SQL formatting - in production, use a proper SQL formatter
-    const formatted = value
-      .replace(/\s+/g, ' ')
-      .replace(/\s*,\s*/g, ',\n    ')
-      .replace(/\bSELECT\b/gi, 'SELECT')
-      .replace(/\bFROM\b/gi, '\nFROM')
-      .replace(/\bWHERE\b/gi, '\nWHERE')
-      .replace(/\bJOIN\b/gi, '\nJOIN')
-      .replace(/\bORDER BY\b/gi, '\nORDER BY')
-      .replace(/\bGROUP BY\b/gi, '\nGROUP BY')
-      .replace(/\bHAVING\b/gi, '\nHAVING');
-    onChange(formatted);
+    try {
+      const formatted = format(value, {
+        language: 'sql',
+        indent: '  ',
+        uppercase: true,
+        linesBetweenQueries: 2,
+      });
+      onChange(formatted);
+    } catch (error) {
+      // If formatting fails, keep the original value
+      console.warn('SQL formatting failed:', error);
+    }
   };
 
   const handleClear = () => {
@@ -72,29 +67,48 @@ export default function SQLEditor({ value, onChange, onExecute, isExecuting }: S
       </CardHeader>
 
       <CardContent className="p-0">
-        {/* SQL Editor Textarea */}
-        <div className="relative">
-          <Textarea
+        {/* Monaco SQL Editor */}
+        <div className="relative" data-testid="monaco-sql-editor">
+          <Editor
+            height="300px"
+            language="sql"
             value={value}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder="-- Write your SQL query here
-SELECT column_name 
-FROM table_name 
-WHERE condition;"
-            className="sql-editor font-mono text-sm border-0 rounded-none resize-none"
-            style={{ minHeight: '300px' }}
-            data-testid="textarea-sql-query"
+            onChange={(val) => onChange(val || '')}
+            theme="vs-light"
+            options={{
+              minimap: { enabled: false },
+              fontSize: 14,
+              fontFamily: 'JetBrains Mono, Consolas, Monaco, Courier New, monospace',
+              lineNumbers: 'on',
+              roundedSelection: false,
+              scrollBeyondLastLine: false,
+              readOnly: false,
+              automaticLayout: true,
+              tabSize: 2,
+              insertSpaces: true,
+              wordWrap: 'on',
+              suggest: {
+                enabled: true,
+                showKeywords: true,
+                showSnippets: true,
+              },
+              quickSuggestions: {
+                other: true,
+                comments: false,
+                strings: false,
+              },
+            }}
+            onMount={(editor) => {
+              // Add SQL keywords for auto-completion
+              editor.focus();
+            }}
           />
         </div>
         
         {/* Query Actions */}
         <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-muted/30">
           <div className="flex items-center space-x-3 text-sm text-muted-foreground">
-            {executionTime && (
-              <span data-testid="text-execution-time">
-                <span className="font-mono">{executionTime}ms</span>
-              </span>
-            )}
+            {/* Execution timing will be handled by the query result component */}
           </div>
           <Button
             onClick={handleExecute}
