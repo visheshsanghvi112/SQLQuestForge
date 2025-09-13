@@ -1,0 +1,147 @@
+Build a full-featured **SQL game platform** with the following specifications, fully functional, professional, and ready for deployment. This game should be designed for users to practice SQL queries, with **100 progressive levels** from beginner to expert, **session-based temporary databases**, and **no permanent storage of user data**. The game must have a polished UI/UX with headers, footers, hints, and a reference guide.
+
+---
+
+1. **Game Concept**
+- 100 levels divided into stages:
+  - Beginner: Levels 1–20 → SELECT, WHERE, ORDER BY, LIMIT
+  - Intermediate: Levels 21–50 → GROUP BY, HAVING, simple joins
+  - Advanced: Levels 51–80 → Multi-table joins, subqueries, aggregates
+  - Expert: Levels 81–100 → Window functions, CTEs, complex queries
+- Users can write SQL queries in a web-based editor.
+- Queries run on **temporary, session-based in-memory databases**.
+- No user data or progress is saved; all data disappears at session end.
+
+---
+
+2. **Frontend Requirements**
+- Framework: **React or Next.js**.
+- Layout:
+  - **Header**:
+    - Game title: “SQL Mastery Challenge”
+    - Current level number and progress bar
+    - Optional timer per level
+    - Session-based score display
+    - Hint button (fetches next hint from backend)
+  - **Main Body**:
+    - SQL editor (preferably **Monaco Editor** or **CodeMirror**) with syntax highlighting.
+    - “Run Query” button to submit SQL.
+    - Results display as a dynamic table with column headers and rows.
+    - Feedback area: success, error messages, hints.
+  - **Footer**:
+    - Level description / challenge instructions.
+    - Mini SQL guide: examples and reminders for SQL commands.
+    - Navigation: Previous / Next buttons.
+    - Optional: links to game info or help.
+- Design must be **responsive** (desktop and tablet-friendly).
+- Animations for correct/incorrect queries for engagement.
+
+---
+
+3. **Backend Requirements**
+- Framework: **Python FastAPI** or **Node.js Express**.
+- **Per-session temporary database**:
+  - Use **SQLite in-memory mode** or equivalent.
+  - Each user session has a fresh database instance.
+- **Query Execution**:
+  - Only allow **SELECT, INSERT, UPDATE** on session tables.
+  - Prevent dangerous queries: `DROP DATABASE`, `ALTER DATABASE`, file system access.
+  - Execute queries safely inside a sandbox or try/catch block.
+- **Level Validation**:
+  - Each level has an **expected result dataset**.
+  - After query execution, backend compares user output to expected output.
+  - Return success/failure and optional hints.
+- **Session Data**:
+  - Track current level, score, and hints used **in memory**.
+  - Destroy session when user leaves or closes the browser.
+
+---
+
+4. **Level Structure**
+- Each level defined as a JSON or Python dictionary with:
+  - `id`: Level number
+  - `title`: Short challenge title
+  - `description`: Challenge instructions
+  - `dataset`: Preloaded table(s) with sample data for the level
+  - `expected_result`: Data used to validate user query
+  - `hints`: Array of 2–4 tiered hints (subtle → explicit → almost solution)
+  - `difficulty`: Beginner / Intermediate / Advanced / Expert
+- Level complexity increases progressively.
+- Datasets vary in size:
+  - Beginner: 10–50 rows
+  - Intermediate: 50–200 rows
+  - Advanced: 200–1000 rows
+  - Expert: 500–2000 rows
+
+---
+
+5. **Hints System**
+- Each level has **tiered hints**:
+  - Hint 1: subtle nudge
+  - Hint 2: clearer guidance
+  - Hint 3: almost solution (optional)
+- Hints are retrieved **dynamically** from backend on user request.
+
+---
+
+6. **Guide / Reference Section**
+- Accessible in footer or sidebar.
+- Covers all SQL concepts in the game:
+  - SELECT, WHERE, ORDER BY, LIMIT
+  - GROUP BY, HAVING
+  - INNER, LEFT, RIGHT JOINS
+  - Subqueries, CTEs
+  - Aggregate functions: SUM, COUNT, AVG
+  - Window functions: ROW_NUMBER(), RANK(), SUM() OVER(), etc.
+- Each guide section has **examples and explanations**.
+- Designed to help users without leaving the game.
+
+---
+
+7. **Gamification & Engagement**
+- Track **score per level** in memory.
+- Instant feedback on query correctness.
+- Optional:
+  - Timer per level
+  - Badges for milestone levels
+  - Animations for correct/incorrect queries
+- Progressive difficulty keeps users engaged from level 1.
+- Include challenges that encourage creative queries.
+
+---
+
+8. **Security Considerations**
+- Sanitize user input to prevent SQL injection.
+- Limit query execution to session tables.
+- Ensure backend cannot access server files or system resources.
+
+---
+
+9. **Technical Notes**
+- Frontend communicates with backend via REST or WebSocket API.
+- Backend returns results in **JSON**.
+- Frontend renders dynamic tables for results.
+- Design must support **scalability** and **lightweight server usage**.
+- Optional: randomize datasets per session to prevent cheating.
+
+---
+
+10. **Deliverables**
+1. Fully functional SQL game with **100 levels**, hints, guide, and progressive difficulty.
+2. Temporary session-based databases with **automatic cleanup**.
+3. Interactive frontend with SQL editor, dynamic results, header, footer, and guide.
+4. Modular backend to allow **easy addition of new levels** and datasets.
+5. Sample datasets and expected results for all 100 levels.
+6. Proper styling, UX, and responsive layout.
+
+---
+
+**Extra Challenges (Optional)**:
+- Lightweight session-based leaderboard.
+- Randomized data per session.
+- AI-assisted hints for complex queries.
+- Animations or visuals for engagement.
+
+---
+
+**Goal**: Deliver a **professional, polished SQL game platform**, fully stateless, scalable, with 100 levels of progressive difficulty, hints, and reference guide, ready for deployment and portfolio showcase.
