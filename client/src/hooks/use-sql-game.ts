@@ -220,7 +220,7 @@ export function useSQLGame() {
     
     // Loading states
     isLoading: sessionLoading || levelLoading || executeQueryMutation.isPending || 
-               getHintMutation.isPending || navigateLevelMutation.isPending,
+               getHintMutation.isPending || navigateLevelMutation.isPending || initSessionMutation.isPending,
     
     // Actions
     initializeSession,

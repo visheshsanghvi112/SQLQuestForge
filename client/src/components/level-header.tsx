@@ -61,8 +61,13 @@ export default function LevelHeader({ session, currentLevel, onGetHint, hintsUse
             <div className="flex items-center space-x-2">
               <Clock className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm font-mono" data-testid="session-timer">
-                {Math.floor((Date.now() - session.startTime.getTime()) / 60000).toString().padStart(2, '0')}:
-                {Math.floor(((Date.now() - session.startTime.getTime()) % 60000) / 1000).toString().padStart(2, '0')}
+                {(() => {
+                  const startTime = new Date(session.startTime).getTime();
+                  const elapsed = Date.now() - startTime;
+                  const minutes = Math.floor(elapsed / 60000);
+                  const seconds = Math.floor((elapsed % 60000) / 1000);
+                  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                })()}
               </span>
             </div>
 
