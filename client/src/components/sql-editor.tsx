@@ -2,6 +2,9 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Code, Play, Square, RotateCcw } from "lucide-react";
 import Editor from "@monaco-editor/react";
+import type { Level } from "@shared/schema";
+import { useTheme } from "next-themes";
+import { useMemo } from "react";
 import { format } from "sql-formatter";
 
 interface SQLEditorProps {
@@ -9,9 +12,36 @@ interface SQLEditorProps {
   onChange: (value: string) => void;
   onExecute: () => void;
   isExecuting: boolean;
+  level?: Level;
 }
 
-export default function SQLEditor({ value, onChange, onExecute, isExecuting }: SQLEditorProps) {
+export default function SQLEditor({ value, onChange, onExecute, isExecuting, level }: SQLEditorProps) {
+  const { theme } = useTheme();
+
+  const schemaSuggestions = useMemo(() => {
+    const suggestions: Array<{ label: string; kind: number; detail: string }> = [];
+    if (!level) return suggestions;
+
+    // Table names
+    level.tables.forEach((t) => {
+      suggestions.push({ label: t.name, kind: 7, detail: "table" });
+      // Columns
+      Object.keys(t.schema).forEach((col) => {
+        suggestions.push({ label: col, kind: 5, detail: `${t.name} column` });
+      });
+    });
+    return suggestions;
+  }, [level]);
+
+  const schemaIndex = useMemo(() => {
+    const tables: Record<string, { columns: Record<string, string> }> = {};
+    if (level) {
+      for (const t of level.tables) {
+        tables[t.name] = { columns: { ...t.schema } };
+      }
+    }
+    return tables;
+  }, [level]);
   const handleExecute = () => {
     onExecute();
   };
@@ -20,10 +50,10 @@ export default function SQLEditor({ value, onChange, onExecute, isExecuting }: S
     try {
       const formatted = format(value, {
         language: 'sql',
-        indent: '  ',
-        uppercase: true,
+        tabWidth: 2,
+        keywordCase: 'upper',
         linesBetweenQueries: 2,
-      });
+      } as any);
       onChange(formatted);
     } catch (error) {
       // If formatting fails, keep the original value
@@ -74,7 +104,7 @@ export default function SQLEditor({ value, onChange, onExecute, isExecuting }: S
             language="sql"
             value={value}
             onChange={(val) => onChange(val || '')}
-            theme="vs-light"
+            theme={theme === 'dark' ? 'vs-dark' : 'vs-light'}
             options={{
               minimap: { enabled: false },
               fontSize: 14,
@@ -87,20 +117,104 @@ export default function SQLEditor({ value, onChange, onExecute, isExecuting }: S
               tabSize: 2,
               insertSpaces: true,
               wordWrap: 'on',
-              suggest: {
-                enabled: true,
-                showKeywords: true,
-                showSnippets: true,
-              },
+              // suggestions handled via completion provider
               quickSuggestions: {
                 other: true,
                 comments: false,
                 strings: false,
               },
             }}
-            onMount={(editor) => {
-              // Add SQL keywords for auto-completion
+            onMount={(editor, monaco) => {
               editor.focus();
+              // Register simple schema-aware completion provider
+              monaco.languages.registerCompletionItemProvider('sql', {
+                triggerCharacters: [' ', '.', '(', ','],
+                provideCompletionItems: () => {
+                  const keywords = [
+                    'SELECT', 'FROM', 'WHERE', 'ORDER', 'BY', 'GROUP', 'HAVING', 'JOIN', 'ON', 'LEFT', 'RIGHT', 'INNER', 'OUTER', 'LIMIT', 'OFFSET', 'AS', 'AND', 'OR', 'NOT', 'IN', 'BETWEEN', 'LIKE', 'WITH'
+                  ].map((k) => ({
+                    label: k,
+                    kind: monaco.languages.CompletionItemKind.Keyword,
+                    insertText: k,
+                  }));
+
+                  const schemaItems = schemaSuggestions.map((s) => ({
+                    label: s.label,
+                    kind: s.detail.includes('table')
+                      ? monaco.languages.CompletionItemKind.Class
+                      : monaco.languages.CompletionItemKind.Field,
+                    detail: s.detail,
+                    insertText: s.label,
+                  }));
+
+                  const snippets = [
+                    {
+                      label: 'SELECT-FROM-WHERE',
+                      detail: 'Snippet: Basic query skeleton',
+                      insertText: 'SELECT ${1:*}\nFROM ${2:table}\nWHERE ${3:condition};',
+                    },
+                    {
+                      label: 'JOIN-skeleton',
+                      detail: 'Snippet: INNER JOIN pattern',
+                      insertText: 'SELECT ${1:a.*}, ${2:b.*}\nFROM ${3:table_a} a\nJOIN ${4:table_b} b ON a.${5:key} = b.${6:key}\nWHERE ${7:condition};',
+                    },
+                    {
+                      label: 'GROUP-BY-HAVING',
+                      detail: 'Snippet: aggregate with HAVING',
+                      insertText: 'SELECT ${1:col}, COUNT(*) AS ${2:cnt}\nFROM ${3:table}\nGROUP BY ${1:col}\nHAVING ${2:cnt} >= ${4:2};',
+                    },
+                    {
+                      label: 'CTE-SELECT',
+                      detail: 'Snippet: WITH common table expression',
+                      insertText: 'WITH ${1:cte} AS (\n  SELECT ${2:*}\n  FROM ${3:table}\n)\nSELECT * FROM ${1:cte};',
+                    },
+                  ].map((s) => ({
+                    label: s.label,
+                    kind: monaco.languages.CompletionItemKind.Snippet,
+                    insertText: s.insertText,
+                    insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                    detail: s.detail,
+                    sortText: '0000' + s.label,
+                  }));
+
+                  return { suggestions: [...snippets, ...keywords, ...schemaItems] } as any;
+                },
+              });
+
+              // Hover provider for table/column type info
+              monaco.languages.registerHoverProvider('sql', {
+                provideHover: (model, position) => {
+                  const word = model.getWordAtPosition(position);
+                  if (!word) return { contents: [] } as any;
+                  const name = word.word;
+
+                  // Check tables
+                  if (schemaIndex[name]) {
+                    const cols = Object.entries(schemaIndex[name].columns)
+                      .map(([c, t]) => `- ${c}: ${t}`)
+                      .join('\n');
+                    return {
+                      contents: [
+                        { value: `**table** \`${name}\`` },
+                        { value: cols || '_no columns_' },
+                      ],
+                    } as any;
+                  }
+
+                  // Check columns (search across tables)
+                  for (const [tableName, tbl] of Object.entries(schemaIndex)) {
+                    if (tbl.columns[name]) {
+                      return {
+                        contents: [
+                          { value: `**column** \`${name}\` in \`${tableName}\`` },
+                          { value: `type: \`${tbl.columns[name]}\`` },
+                        ],
+                      } as any;
+                    }
+                  }
+                  return { contents: [] } as any;
+                },
+              });
             }}
           />
         </div>

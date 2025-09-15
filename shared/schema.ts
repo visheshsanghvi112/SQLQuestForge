@@ -34,6 +34,14 @@ export const levelSchema = z.object({
 
 export type Level = z.infer<typeof levelSchema>;
 
+// AI Mentor request/response
+export const aiAskSchema = z.object({
+  question: z.string().min(1),
+  levelId: z.number().min(1).max(100).optional(),
+  currentQuery: z.string().optional(),
+});
+export type AIAsk = z.infer<typeof aiAskSchema>;
+
 // Query Execution Schema
 export const queryExecutionSchema = z.object({
   sessionId: z.string(),

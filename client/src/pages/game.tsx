@@ -8,6 +8,7 @@ import FeedbackPanel from "@/components/feedback-panel";
 import HintsPanel from "@/components/hints-panel";
 import GameFooter from "@/components/game-footer";
 import { Card } from "@/components/ui/card";
+import AIMentor from "@/components/ai-mentor";
 
 export default function Game() {
   const {
@@ -63,18 +64,20 @@ export default function Game() {
             onChange={setCurrentQuery}
             onExecute={() => executeQuery(currentQuery)}
             isExecuting={isLoading}
+            level={currentLevel}
           />
         </div>
 
         {/* Right Panel: Results & Feedback */}
         <div className="md:col-span-5 space-y-4 md:space-y-6">
-          <QueryResults result={queryResult || null} />
+          <QueryResults result={queryResult || null} level={currentLevel} currentQuery={currentQuery} />
           <FeedbackPanel 
             result={queryResult || null}
             onNextLevel={() => navigateLevel('next')}
             onRetryLevel={() => navigateLevel('reset')}
           />
           {hints.length > 0 && <HintsPanel hints={hints} />}
+          <AIMentor levelId={currentLevel.id} currentQuery={currentQuery} />
         </div>
 
       </main>
