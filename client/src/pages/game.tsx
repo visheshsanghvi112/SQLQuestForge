@@ -52,10 +52,10 @@ export default function Game() {
       />
 
       {/* Main Game Area */}
-      <main className="flex-1 container mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <main className="flex-1 container mx-auto px-2 sm:px-4 py-4 sm:py-6 grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6">
         
         {/* Left Panel: Level Info & SQL Editor */}
-        <div className="lg:col-span-7 space-y-6">
+        <div className="md:col-span-7 space-y-4 md:space-y-6">
           <LevelInfo level={currentLevel} />
           
           <SQLEditor
@@ -67,7 +67,7 @@ export default function Game() {
         </div>
 
         {/* Right Panel: Results & Feedback */}
-        <div className="lg:col-span-5 space-y-6">
+        <div className="md:col-span-5 space-y-4 md:space-y-6">
           <QueryResults result={queryResult || null} />
           <FeedbackPanel 
             result={queryResult || null}

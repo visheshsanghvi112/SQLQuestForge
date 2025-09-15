@@ -57,9 +57,25 @@ export default function LevelInfo({ level }: LevelInfoProps) {
 
       <CardContent>
         <div className="prose max-w-none">
-          <p className="text-foreground leading-relaxed mb-4" data-testid="text-level-description">
+          {level.story && (
+            <p className="text-foreground leading-relaxed mb-3" data-testid="text-level-story">
+              {level.story}
+            </p>
+          )}
+          <p className="text-muted-foreground mb-4" data-testid="text-level-description">
             {level.description}
           </p>
+
+          {level.objectives && level.objectives.length > 0 && (
+            <div className="mb-4" data-testid="objectives-list">
+              <h4 className="font-semibold text-foreground mb-2">Objectives</h4>
+              <ul className="list-disc list-inside space-y-1">
+                {level.objectives.map((obj, i) => (
+                  <li key={i} className="text-foreground">{obj}</li>
+                ))}
+              </ul>
+            </div>
+          )}
           
           {/* Database Schema Preview */}
           {showSchema && (

@@ -18,6 +18,9 @@ export const levelSchema = z.object({
   title: z.string(),
   description: z.string(),
   difficulty: z.enum(['Beginner', 'Intermediate', 'Advanced', 'Expert']),
+  story: z.string().optional(),
+  objectives: z.array(z.string()).optional(),
+  starterQuery: z.string().optional(),
   tables: z.array(z.object({
     name: z.string(),
     schema: z.record(z.string()),
